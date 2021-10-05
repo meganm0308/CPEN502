@@ -14,6 +14,7 @@ public class NeuralNet {
     int numInputs = 2;
     int numHiddenNeurons = 4;
     int numOutputs = 1;
+    int currentTrainingSet = 0;
 
     //upper and lower bounds for initializing weights
     double weightMin = -0.5;
@@ -49,13 +50,22 @@ public class NeuralNet {
         System.out.println(Arrays.deepToString(inputToHiddenWeights));
     }
 
+    //The activation function
+    public double sigmoid(double x) {
+        if (isBinary) {
+            return 1 / (1 + Math.pow(Math.E, -x)); //sigmoid function for binary training sets
+        }
+        else {
+            return -1 + 2 / (1 + Math.pow(Math.E, -x)); //sigmoid function for bipolar training sets
+        }
+    }
+
     //Forward propagation to calculate the output from the hidden neurons and the output neuron
     public void forwardPropagation() {
         for (int i = 0; i < outputsHidden.length; i++) {
             for (int j = 0; j < inputToHiddenWeights.length; j++) {
-                for (int k = 0; k < inputToHiddenWeights[j].length; k++) {
-                    //outputsHidden[i] = binarySets[j]
-                }
+                outputsHidden[i] = binarySets[currentTrainingSet][j];
+                outputsHidden[i] = sigmoid(outputsHidden[i]);
             }
         }
     }
