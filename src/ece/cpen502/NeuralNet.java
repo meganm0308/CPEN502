@@ -10,6 +10,7 @@ public class NeuralNet {
     //hyper-parameters
     public static double learningRate = 0.2;
     public static double momentum = 0;
+    public static double errorThreshold = 0.05;
 
     int numInputs = 2;
     int numHiddenNeurons = 4;
@@ -31,6 +32,10 @@ public class NeuralNet {
 
     //outputs
     double[] outputsHidden = new double[numHiddenNeurons];
+    double[] output = new double[numOutputs];
+
+    //error
+    double[] errorSets = new double[numOutputs];
 
     //Initialize weights to random values in the range [weightMin, weightMax]
     public void initializeWeights() {
@@ -47,7 +52,6 @@ public class NeuralNet {
                 hiddenToOutputWeights[i][j] = weightMin + (new Random().nextDouble() * (weightMax - weightMin));
             }
         }
-        System.out.println(Arrays.deepToString(inputToHiddenWeights));
     }
 
     //The activation function
@@ -62,17 +66,35 @@ public class NeuralNet {
 
     //Forward propagation to calculate the output from the hidden neurons and the output neuron
     public void forwardPropagation() {
+
+        //outputs from the hidden neurons
         for (int i = 0; i < outputsHidden.length; i++) {
+            outputsHidden[i] = 0;
             for (int j = 0; j < inputToHiddenWeights.length; j++) {
-                outputsHidden[i] = binarySets[currentTrainingSet][j];
+                outputsHidden[i] += binarySets[currentTrainingSet][j] * inputToHiddenWeights[j][i];
                 outputsHidden[i] = sigmoid(outputsHidden[i]);
+            }
+        }
+
+        //outputs from the output neuron
+        for (int i = 0; i < output.length; i++) {
+            output[i] = 0;
+            for (int j = 0; j < hiddenToOutputWeights.length; j++) {
+                if (j==0) {  //first weight applied to the bias input
+                    output[i] += biasInput * hiddenToOutputWeights[j][i];
+                } else {
+                    output[i] += outputsHidden[j-1] * hiddenToOutputWeights[j][i];
+                }
+                output[i] = sigmoid(output[i]);
             }
         }
     }
 
+
+
     public static void main(String[] args) {
         NeuralNet XOR = new NeuralNet();
-        XOR.initializeWeights();
-
+        //XOR.initializeWeights();
+        //XOR.forwardPropagation();
     }
 }
