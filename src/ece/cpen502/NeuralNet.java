@@ -9,6 +9,9 @@ public class NeuralNet {
     private double learningRate, momentum;
     private int numHiddenNeurons;
 
+    //hyper-parameters
+    public static double errorThreshold = 0.05;
+
     private int numInputs = 2;
     private int numOutputs = 1;
     private int currentTrainingSet = 0;
@@ -26,6 +29,9 @@ public class NeuralNet {
 
     //outputs
     private double[] outputsHidden = new double[numHiddenNeurons];
+    private double[] output = new double[numOutputs];
+    //error
+    private double[] errorSets = new double[numOutputs];
 
     NeuralNet (double[][] input, double[][] output,
                 double lrnRate, double inputMomentum,
@@ -55,7 +61,6 @@ public class NeuralNet {
                 hiddenToOutputWeights[i][j] = weightMin + (new Random().nextDouble() * (weightMax - weightMin));
             }
         }
-        System.out.println(Arrays.deepToString(inputToHiddenWeights));
     }
 
     //The activation function
@@ -69,10 +74,26 @@ public class NeuralNet {
 
     //Forward propagation to calculate the output from the hidden neurons and the output neuron
     public void forwardPropagation() {
+
+        //outputs from the hidden neurons
         for (int i = 0; i < outputsHidden.length; i++) {
+            outputsHidden[i] = 0;
             for (int j = 0; j < inputToHiddenWeights.length; j++) {
-                outputsHidden[i] = inputVectors[currentTrainingSet][j];
+                outputsHidden[i] += inputVectors[currentTrainingSet][j] * inputToHiddenWeights[j][i];
                 outputsHidden[i] = sigmoid(outputsHidden[i]);
+            }
+        }
+
+        //outputs from the output neuron
+        for (int i = 0; i < output.length; i++) {
+            output[i] = 0;
+            for (int j = 0; j < hiddenToOutputWeights.length; j++) {
+                if (j==0) {  //first weight applied to the bias input
+                    output[i] += biasInput * hiddenToOutputWeights[j][i];
+                } else {
+                    output[i] += outputsHidden[j-1] * hiddenToOutputWeights[j][i];
+                }
+                output[i] = sigmoid(output[i]);
             }
         }
     }
@@ -90,8 +111,7 @@ public class NeuralNet {
         double[][] bipolarInput = {{1,-1,-1}, {1,-1,1}, {1,1,-1}, {1,1,1}};
 
         NeuralNet XOR = new NeuralNet(binaryInput, expectedOutput, learningRate, momentum, noOfHiddenNeurons, true);
-
         XOR.initializeWeights();
-
+        //XOR.forwardPropagation();
     }
 }
