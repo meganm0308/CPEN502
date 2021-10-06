@@ -5,41 +5,50 @@ import java.util.Random;
 
 public class NeuralNet {
 
-    public static boolean isBinary = true; //true = binary training sets used, false = bipolar training sets
+    private boolean isBinary; //true = binary training sets used, false = bipolar training sets
+    private double learningRate, momentum;
+    private int numHiddenNeurons;
 
     //hyper-parameters
-    public static double learningRate = 0.2;
-    public static double momentum = 0;
     public static double errorThreshold = 0.05;
 
-    int numInputs = 2;
-    int numHiddenNeurons = 4;
-    int numOutputs = 1;
-    int currentTrainingSet = 0;
+    private int numInputs = 2;
+    private int numOutputs = 1;
+    private int currentTrainingSet = 0;
 
     //upper and lower bounds for initializing weights
-    double weightMin = -0.5;
-    double weightMax = 0.5;
+    private double weightMin = -0.5;
+    private double weightMax = 0.5;
 
     //weights
-    double[][] inputToHiddenWeights = new double[numInputs + 1][numHiddenNeurons]; //+1 to accommodate a bias weight
-    double[][] hiddenToOutputWeights = new double[numHiddenNeurons + 1][numOutputs]; //+1 to accommodate a bias weight
+    private double[][] inputToHiddenWeights, hiddenToOutputWeights; //+1 to accommodate a bias weight
 
     //inputs
-    double biasInput = 1;
-    double[][] binarySets = {{1,0,0}, {1,0,1}, {1,1,0}, {1,1,1}};
-    double[][] bipolarSets = {{1,-1,-1}, {1,-1,1}, {1,1,-1}, {1,1,1}};
+    private double biasInput = 1;
+    private double[][] inputVectors, expectedOutput;
 
     //outputs
-    double[] outputsHidden = new double[numHiddenNeurons];
-    double[] output = new double[numOutputs];
-
+    private double[] outputsHidden = new double[numHiddenNeurons];
+    private double[] output = new double[numOutputs];
     //error
-    double[] errorSets = new double[numOutputs];
+    private double[] errorSets = new double[numOutputs];
+
+    NeuralNet (double[][] input, double[][] output,
+                double lrnRate, double inputMomentum,
+                int noOfHiddenNeurons, boolean isBinaryTraining) {
+        inputVectors = input;
+        expectedOutput = output;
+        learningRate = lrnRate;
+        momentum = inputMomentum;
+        numHiddenNeurons = noOfHiddenNeurons;
+        isBinary = isBinaryTraining;
+
+        inputToHiddenWeights = new double[numInputs + 1][numHiddenNeurons];
+        hiddenToOutputWeights = new double[numHiddenNeurons + 1][numOutputs];
+    }
 
     //Initialize weights to random values in the range [weightMin, weightMax]
     public void initializeWeights() {
-
         //Initialize weights from the inputs to the neurons at the hidden layer
         for (int i = 0; i < inputToHiddenWeights.length; i++) {
             for (int j = 0; j < inputToHiddenWeights[i].length; j++) {
@@ -58,8 +67,7 @@ public class NeuralNet {
     public double sigmoid(double x) {
         if (isBinary) {
             return 1 / (1 + Math.pow(Math.E, -x)); //sigmoid function for binary training sets
-        }
-        else {
+        } else {
             return -1 + 2 / (1 + Math.pow(Math.E, -x)); //sigmoid function for bipolar training sets
         }
     }
@@ -71,7 +79,7 @@ public class NeuralNet {
         for (int i = 0; i < outputsHidden.length; i++) {
             outputsHidden[i] = 0;
             for (int j = 0; j < inputToHiddenWeights.length; j++) {
-                outputsHidden[i] += binarySets[currentTrainingSet][j] * inputToHiddenWeights[j][i];
+                outputsHidden[i] += inputVectors[currentTrainingSet][j] * inputToHiddenWeights[j][i];
                 outputsHidden[i] = sigmoid(outputsHidden[i]);
             }
         }
@@ -90,11 +98,20 @@ public class NeuralNet {
         }
     }
 
-
-
     public static void main(String[] args) {
-        NeuralNet XOR = new NeuralNet();
-        //XOR.initializeWeights();
+
+        double momentum = 0;
+        double learningRate = 0.2;
+        int noOfHiddenNeurons = 4;
+
+        //two different inputs
+        double[][] binaryInput = {{1,0,0}, {1,0,1}, {1,1,0}, {1,1,1}};
+        double[][] expectedOutput = {{}};
+
+        double[][] bipolarInput = {{1,-1,-1}, {1,-1,1}, {1,1,-1}, {1,1,1}};
+
+        NeuralNet XOR = new NeuralNet(binaryInput, expectedOutput, learningRate, momentum, noOfHiddenNeurons, true);
+        XOR.initializeWeights();
         //XOR.forwardPropagation();
     }
 }
