@@ -152,7 +152,7 @@ public class NeuralNet {
         //update weights from the inputs to the hidden layers
         for (int i = 0; i < inputToHiddenWeights.length; i++) {
             for (int j = 0; j < inputToHiddenWeights[i].length; j++) {
-                inputToHiddenWeights[i][j] += learningRate * hiddenErrorSignals[j] * inputVectors[currentTrainingSet][i];
+                inputToHiddenWeights[i][j] += learningRate * hiddenErrorSignals[j+1] * inputVectors[currentTrainingSet][i];
             }
         }
     }
