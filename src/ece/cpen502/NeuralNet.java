@@ -11,9 +11,8 @@ public class NeuralNet {
 
     //hyper-parameters
     public static double errorThreshold = 0.05;
-
-    private int numInputs = 2;
-    private int numOutputs = 1;
+    private static int numInputs = 2;
+    private static int numOutputs = 1;
     private int currentTrainingSet = 0;
 
     //upper and lower bounds for initializing weights
@@ -70,9 +69,8 @@ public class NeuralNet {
     }
 
     //Forward propagation to calculate the outputs from the hidden neurons and the output neuron(s)
-    public double[] forwardPropagation() {
+    public double[] forwardToHidden() {
         double[] outputsHidden = new double[numHiddenNeurons];
-        double[] outputs = new double[numOutputs];
 
         //outputs from the hidden neurons
         for (int i = 0; i < outputsHidden.length; i++) {
@@ -82,7 +80,11 @@ public class NeuralNet {
                 outputsHidden[i] = sigmoid(outputsHidden[i]);  //apply activation function
             }
         }
+        return outputsHidden;
+    }
 
+    public double[] forwardToOutput(double[] outputsHidden) {
+        double[] outputs = new double[numOutputs];
         //outputs from the output neuron
         for (int i = 0; i < outputs.length; i++) {
             outputs[i] = 0;
@@ -119,7 +121,11 @@ public class NeuralNet {
         //update weights from the hidden layer to the outputs
         for (int i = 0; i < hiddenToOutputWeights.length; i++) {
             for (int j = 0; j < hiddenToOutputWeights[i].length; j++) {
-                hiddenToOutputWeights[i][j] += learningRate * outputErrorSignals[j] * outputsHidden[i];
+                if (i == 0) {  //bias input at the hidden layer
+                    hiddenToOutputWeights[i][j] += learningRate * outputErrorSignals[j] * biasInput;
+                } else {
+                    hiddenToOutputWeights[i][j] += learningRate * outputErrorSignals[j] * outputsHidden[i-1];
+                }
             }
         }
 
@@ -129,9 +135,17 @@ public class NeuralNet {
                 hiddenErrorSignals[i] += hiddenToOutputWeights[i][j] * outputErrorSignals[j];
             }
             if (isBinary) {
-                hiddenErrorSignals[i] *= outputsHidden[i] * (1 - outputsHidden[i]);
+                if (i == 0) {
+                    hiddenErrorSignals[i] *= biasInput * (1 - biasInput);
+                } else {
+                    hiddenErrorSignals[i] *= outputsHidden[i-1] * (1 - outputsHidden[i-1]);
+                }
             } else {
-                hiddenErrorSignals[i] *= 1.0 / 2.0 * (1 - outputsHidden[i] * outputsHidden[i]);
+                if (i == 0) {
+                    hiddenErrorSignals[i] *= (1 - biasInput * biasInput) / 2.0;
+                } else {
+                    hiddenErrorSignals[i] *= (1 - outputsHidden[i-1] * outputsHidden[i-1]) / 2.0;
+                }
             }
         }
 
@@ -148,14 +162,27 @@ public class NeuralNet {
         double momentum = 0;
         double learningRate = 0.2;
         int noOfHiddenNeurons = 4;
+        double[] outputsHidden;
+        double[] outputs;
 
         //two different inputs
         double[][] binaryInput = {{1,0,0}, {1,0,1}, {1,1,0}, {1,1,1}};
-        double[][] expectedOutput = {{0},{1},{1},{0}};
+        double[][] binaryExpectedOutput = {{0},{1},{1},{0}};
 
         double[][] bipolarInput = {{1,-1,-1}, {1,-1,1}, {1,1,-1}, {1,1,1}};
+        double[][] bipolarExpectedOutput = {{-1}, {1}, {1}, {-1}};
 
-        NeuralNet XOR = new NeuralNet(binaryInput, expectedOutput, learningRate, momentum, noOfHiddenNeurons, true);
+        NeuralNet XOR = new NeuralNet(binaryInput, binaryExpectedOutput, learningRate, momentum, noOfHiddenNeurons, true);
         XOR.initializeWeights();
+        //do {
+        System.out.println(Arrays.deepToString(XOR.inputToHiddenWeights));
+            outputsHidden = XOR.forwardToHidden();
+        System.out.println(Arrays.toString(outputsHidden));
+            outputs = XOR.forwardToOutput(outputsHidden);
+        System.out.println(Arrays.toString(outputs));
+            XOR.backPropagation(outputs,outputsHidden);
+        System.out.println(Arrays.deepToString(XOR.inputToHiddenWeights));
+
+        //}
     }
 }
