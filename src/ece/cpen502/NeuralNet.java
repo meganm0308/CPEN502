@@ -10,10 +10,10 @@ public class NeuralNet {
     private int numHiddenNeurons;
 
     //hyper-parameters
-    public static double errorThreshold = 0.05;
+    private static double errorThreshold = 0.05;
     private static int numInputs = 2;
     private static int numOutputs = 1;
-    private int currentTrainingSet = 0;
+    private static int currentTrainingSet = 0;
 
     //upper and lower bounds for initializing weights
     private double weightMin = -0.5;
@@ -157,13 +157,41 @@ public class NeuralNet {
         }
     }
 
+    public void testError() {
+        double[] outputsHidden;
+        double[] outputs;
+        double error;
+        int epoch = 0;
+
+        initializeWeights();
+
+        do {
+            currentTrainingSet = 0;
+            error = 0;
+            while (currentTrainingSet < inputVectors.length) {
+                outputsHidden = forwardToHidden();
+                outputs = forwardToOutput(outputsHidden);
+                for (int i = 0; i < outputs.length; i++) {
+                    error += Math.pow((outputs[i] - expectedOutput[currentTrainingSet][i]),2);
+                }
+
+                if (currentTrainingSet == (inputVectors.length - 1)) {
+                    error = error / 2;
+                    backPropagation(outputs, outputsHidden);
+                    epoch++;
+                    System.out.println(error);
+                }
+                currentTrainingSet++;
+            }
+        } while (error > errorThreshold);
+        System.out.println("number of epochs: " + epoch);
+    }
+
     public static void main(String[] args) {
 
         double momentum = 0;
         double learningRate = 0.2;
         int noOfHiddenNeurons = 4;
-        double[] outputsHidden;
-        double[] outputs;
 
         //two different inputs
         double[][] binaryInput = {{1,0,0}, {1,0,1}, {1,1,0}, {1,1,1}};
@@ -172,17 +200,9 @@ public class NeuralNet {
         double[][] bipolarInput = {{1,-1,-1}, {1,-1,1}, {1,1,-1}, {1,1,1}};
         double[][] bipolarExpectedOutput = {{-1}, {1}, {1}, {-1}};
 
-        NeuralNet XOR = new NeuralNet(binaryInput, binaryExpectedOutput, learningRate, momentum, noOfHiddenNeurons, true);
-        XOR.initializeWeights();
-        //do {
-        System.out.println(Arrays.deepToString(XOR.inputToHiddenWeights));
-            outputsHidden = XOR.forwardToHidden();
-        System.out.println(Arrays.toString(outputsHidden));
-            outputs = XOR.forwardToOutput(outputsHidden);
-        System.out.println(Arrays.toString(outputs));
-            XOR.backPropagation(outputs,outputsHidden);
-        System.out.println(Arrays.deepToString(XOR.inputToHiddenWeights));
-
-        //}
+        NeuralNet XOR1 = new NeuralNet(binaryInput, binaryExpectedOutput, learningRate, momentum, noOfHiddenNeurons, true);
+        NeuralNet Bipolar = new NeuralNet(bipolarInput, bipolarExpectedOutput, learningRate,momentum, noOfHiddenNeurons, false);
+        XOR1.testError();
+        //Bipolar.testError();
     }
 }
