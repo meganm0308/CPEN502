@@ -179,7 +179,16 @@ public class NeuralNet {
                     error = error / 2;
                     backPropagation(outputs, outputsHidden);
                     epoch++;
-                    System.out.println(error);
+                    if(epoch == 1) {
+                        System.out.println("here epoch 1");
+                        System.out.println(error);
+                    }
+                    if(epoch == 300) {
+                        System.out.println("epoch 300");
+                        System.out.println(error);
+                    }
+//                    System.out.println(error);
+                    int a = 2;
                 }
                 currentTrainingSet++;
             }
