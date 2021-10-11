@@ -3,7 +3,6 @@ package ece.cpen502;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 public class NeuralNet {
@@ -24,6 +23,7 @@ public class NeuralNet {
 
     //weights
     private double[][] inputToHiddenWeights, hiddenToOutputWeights; //+1 to accommodate a bias weight
+    private double[][] deltaWHiddenToOutput, deltaWInputToHidden;
 
     //inputs
     private double biasInput = 1;
@@ -44,6 +44,9 @@ public class NeuralNet {
 
         inputToHiddenWeights = new double[numInputs + 1][numHiddenNeurons+1];
         hiddenToOutputWeights = new double[numHiddenNeurons + 1][numOutputs];
+
+        deltaWHiddenToOutput = new double[numHiddenNeurons + 1][numOutputs];
+        deltaWInputToHidden = new double[inputVectors.length][numHiddenNeurons + 1];
     }
 
     //Initialize weights to random values in the range [weightMin, weightMax]
@@ -104,8 +107,6 @@ public class NeuralNet {
 
         double[] outputErrorSignals = new double[numOutputs];
         double[] hiddenErrorSignals = new double[numHiddenNeurons + 1];
-        double[][] deltaWHiddenToOutput = new double[numHiddenNeurons + 1][numOutputs];
-        double[][] deltaWInputToHidden = new double[inputVectors.length][numHiddenNeurons + 1];
 
         //compute the error signals at the outputs neurons
         if (isBinary) {
@@ -116,7 +117,7 @@ public class NeuralNet {
         } else {
             for (int i = 0; i < outputs.length; i++) {
                 outputErrorSignals[i] = (expectedOutput[currentTrainingSet][i] - outputs[i]) *
-                        (1 - outputs[i] * outputs[i]) / 2.0;
+                        (1 - outputs[i] * outputs[i]) * 0.5;
             }
         }
 
