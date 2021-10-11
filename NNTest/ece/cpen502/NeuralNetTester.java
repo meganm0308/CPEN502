@@ -28,7 +28,7 @@ public class NeuralNetTester {
         testBinaryNN = new NeuralNet(binaryInput, binaryExpectedOutput, learningRate, momentum, noOfHiddenNeurons, true);
         testBipolarNN = new NeuralNet(bipolarInput, bipolarExpectedOutput, learningRate,momentum, noOfHiddenNeurons, false);
 
-        inputToHiddenWeights = new double[][];
+//        inputToHiddenWeights = new double[][];
         hiddenToOutputWeights = new double[5][1];
     }
 

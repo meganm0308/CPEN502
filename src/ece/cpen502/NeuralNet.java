@@ -12,15 +12,8 @@ public class NeuralNet {
     private double learningRate, momentum;
     private int numHiddenNeurons;
 
-    //hyper-parameters
-    private static double errorThreshold = 0.05;
-    private static int numInputs = 2;
     private static int numOutputs = 1;
     private static int currentTrainingSet = 0;
-
-    //upper and lower bounds for initializing weights
-    private double weightMin = -0.5;
-    private double weightMax = 0.5;
 
     //weights
     private double[][] inputToHiddenWeights, hiddenToOutputWeights; //+1 to accommodate a bias weight
@@ -42,6 +35,7 @@ public class NeuralNet {
         numHiddenNeurons = noOfHiddenNeurons;
         isBinary = isBinaryTraining;
 
+        int numInputs = 2;
         inputToHiddenWeights = new double[numInputs + 1][numHiddenNeurons+1];
         hiddenToOutputWeights = new double[numHiddenNeurons + 1][numOutputs];
     }
@@ -49,6 +43,9 @@ public class NeuralNet {
     //Initialize weights to random values in the range [weightMin, weightMax]
     public void initializeWeights() {
         //Initialize weights from the inputs to the neurons at the hidden layer
+        //upper and lower bounds for initializing weights
+        double weightMin = -0.5;
+        double weightMax = 0.5;
         for (int i = 0; i < inputToHiddenWeights.length; i++) {
             for (int j = 0; j < inputToHiddenWeights[i].length; j++) {
                 inputToHiddenWeights[i][j] = weightMin + (new Random().nextDouble() * (weightMax - weightMin));
@@ -72,35 +69,35 @@ public class NeuralNet {
     }
 
     //Forward propagation to calculate the outputs from the hidden neurons and the output neuron(s)
-    public double[] forwardToHidden() {
+    public double[] forwardToHidden(double[][] weights) {
         double[] outputsHidden = new double[numHiddenNeurons + 1];
         outputsHidden[0] = biasInput;
 
         //outputs from the hidden neurons
         for (int i = 1; i < outputsHidden.length; i++) {
             outputsHidden[i] = 0;
-            for (int j = 0; j < inputToHiddenWeights.length; j++) {
-                outputsHidden[i] += inputVectors[currentTrainingSet][j] * inputToHiddenWeights[j][i];
+            for (int j = 0; j < weights.length; j++) {
+                outputsHidden[i] += inputVectors[currentTrainingSet][j] * weights[j][i];
             }
             outputsHidden[i] = sigmoid(outputsHidden[i]);  //apply activation function
         }
         return outputsHidden;
     }
 
-    public double[] forwardToOutput(double[] outputsHidden) {
+    public double[] forwardToOutput(double[] outputsHidden, double[][] weights) {
         double[] outputs = new double[numOutputs];
         //outputs from the output neuron
         for (int i = 0; i < outputs.length; i++) {
             outputs[i] = 0;
-            for (int j = 0; j < hiddenToOutputWeights.length; j++) {
-                outputs[i] += outputsHidden[j] * hiddenToOutputWeights[j][i];
+            for (int j = 0; j < weights.length; j++) {
+                outputs[i] += outputsHidden[j] * weights[j][i];
             }
             outputs[i] = sigmoid(outputs[i]); //apply activation function
         }
         return outputs;
     }
 
-    public void backPropagation(double[] outputs, double[] outputsHidden) {
+    public void backPropagation(double[] outputs, double[] outputsHidden, double[][] hidden_to_output_weights) {
 
         double[] outputErrorSignals = new double[numOutputs];
         double[] hiddenErrorSignals = new double[numHiddenNeurons + 1];
@@ -121,11 +118,11 @@ public class NeuralNet {
         }
 
         //update weights from the hidden layer to the outputs
-        for (int i = 0; i < hiddenToOutputWeights.length; i++) {
-            for (int j = 0; j < hiddenToOutputWeights[i].length; j++) {
+        for (int i = 0; i < hidden_to_output_weights.length; i++) {
+            for (int j = 0; j < hidden_to_output_weights[i].length; j++) {
                 deltaWHiddenToOutput[i][j] = momentum * deltaWHiddenToOutput[i][j]
                         + learningRate * outputErrorSignals[j] * outputsHidden[i];
-                hiddenToOutputWeights[i][j] += deltaWHiddenToOutput[i][j];
+                hidden_to_output_weights[i][j] += deltaWHiddenToOutput[i][j];
             }
         }
 
@@ -133,7 +130,7 @@ public class NeuralNet {
         for (int i = 0; i < hiddenErrorSignals.length; i++) {
             hiddenErrorSignals[i] = 0;
             for (int j = 0; j < numOutputs; j++) {
-                hiddenErrorSignals[i] += hiddenToOutputWeights[i][j] * outputErrorSignals[j];
+                hiddenErrorSignals[i] += hidden_to_output_weights[i][j] * outputErrorSignals[j];
             }
             if (isBinary) {
                 hiddenErrorSignals[i] *= outputsHidden[i] * (1 - outputsHidden[i]);
@@ -152,7 +149,7 @@ public class NeuralNet {
         }
     }
 
-    public ArrayList testError() {
+    public ArrayList testError(double errorThreshold) {
         double[] outputsHidden;
         double[] outputs;
         double error;
@@ -161,14 +158,16 @@ public class NeuralNet {
 
         initializeWeights();
 
+        //hyper-parameters
+
         do {
             currentTrainingSet = 0;
             error = 0;
 
             while (currentTrainingSet < inputVectors.length) {
-                outputsHidden = forwardToHidden();
-                outputs = forwardToOutput(outputsHidden);
-                backPropagation(outputs, outputsHidden);
+                outputsHidden = forwardToHidden(inputToHiddenWeights);
+                outputs = forwardToOutput(outputsHidden, hiddenToOutputWeights);
+                backPropagation(outputs, outputsHidden, hiddenToOutputWeights);
 
                 for (int i = 0; i < outputs.length; i++) {
                     error += Math.pow((outputs[i] - expectedOutput[currentTrainingSet][i]),2);
@@ -203,6 +202,7 @@ public class NeuralNet {
 
         double learningRate = 0.2;
         int noOfHiddenNeurons = 4;
+        double errorThreshold = 0.05;
 
         //two different inputs
         double[][] binaryInput = {{1,0,0}, {1,0,1}, {1,1,0}, {1,1,1}};
@@ -215,13 +215,13 @@ public class NeuralNet {
         NeuralNet BipolarNoMomentum = new NeuralNet(bipolarInput, bipolarExpectedOutput, learningRate,0, noOfHiddenNeurons, false);
         NeuralNet BipolarWithMomentum = new NeuralNet(bipolarInput, bipolarExpectedOutput, learningRate,0.9, noOfHiddenNeurons, false);
 
-        ArrayList xorErrors = BinaryNoMomentum.testError();
+        ArrayList xorErrors = BinaryNoMomentum.testError(errorThreshold);
         textWriter("BinaryNoMomentum.txt", xorErrors);
 
-        ArrayList bipolarErrors = BipolarNoMomentum.testError();
+        ArrayList bipolarErrors = BipolarNoMomentum.testError(errorThreshold);
         textWriter("BipolarNoMomentum.txt", bipolarErrors);
 
-        ArrayList bipolarMomentumErrors = BipolarWithMomentum.testError();
+        ArrayList bipolarMomentumErrors = BipolarWithMomentum.testError(errorThreshold);
         textWriter("BipolarWithMomentum.txt", bipolarMomentumErrors);
     }
 }
