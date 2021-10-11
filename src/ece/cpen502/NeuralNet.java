@@ -3,6 +3,7 @@ package ece.cpen502;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
 public class NeuralNet {
@@ -103,6 +104,8 @@ public class NeuralNet {
 
         double[] outputErrorSignals = new double[numOutputs];
         double[] hiddenErrorSignals = new double[numHiddenNeurons + 1];
+        double[][] deltaWHiddenToOutput = new double[numHiddenNeurons + 1][numOutputs];
+        double[][] deltaWInputToHidden = new double[inputVectors.length][numHiddenNeurons + 1];
 
         //compute the error signals at the outputs neurons
         if (isBinary) {
@@ -120,9 +123,9 @@ public class NeuralNet {
         //update weights from the hidden layer to the outputs
         for (int i = 0; i < hiddenToOutputWeights.length; i++) {
             for (int j = 0; j < hiddenToOutputWeights[i].length; j++) {
-
-                hiddenToOutputWeights[i][j] += learningRate * outputErrorSignals[j] * outputsHidden[i];
-
+                deltaWHiddenToOutput[i][j] = momentum * deltaWHiddenToOutput[i][j]
+                                            + learningRate * outputErrorSignals[j] * outputsHidden[i];
+                hiddenToOutputWeights[i][j] += deltaWHiddenToOutput[i][j];
             }
         }
 
@@ -134,7 +137,6 @@ public class NeuralNet {
             }
             if (isBinary) {
                 hiddenErrorSignals[i] *= outputsHidden[i] * (1 - outputsHidden[i]);
-
             } else {
                 hiddenErrorSignals[i] *= (1 - outputsHidden[i] * outputsHidden[i]) / 2.0;
             }
@@ -143,7 +145,9 @@ public class NeuralNet {
         //update weights from the inputs to the hidden layers
         for (int i = 0; i < inputToHiddenWeights.length; i++) {
             for (int j = 0; j < inputToHiddenWeights[i].length; j++) {
-                inputToHiddenWeights[i][j] += learningRate * hiddenErrorSignals[j] * inputVectors[currentTrainingSet][i];
+                deltaWInputToHidden[i][j] = momentum * deltaWInputToHidden[i][j]
+                                            + learningRate * hiddenErrorSignals[j] * inputVectors[currentTrainingSet][i];
+                inputToHiddenWeights[i][j] += deltaWInputToHidden[i][j];
             }
         }
     }
@@ -217,8 +221,7 @@ public class NeuralNet {
         ArrayList bipolarErrors = BipolarNoMomentum.testError();
         textWriter("BipolarNoMomentum.txt", bipolarErrors);
 
-        ArrayList bipolarMomentumErrors = BipolarNoMomentum.testError();
+        ArrayList bipolarMomentumErrors = BipolarWithMomentum.testError();
         textWriter("BipolarWithMomentum.txt", bipolarMomentumErrors);
-
     }
 }
