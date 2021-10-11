@@ -43,7 +43,8 @@ public class NeuralNetTester {
     public void testForwardHidden() {
 //        NeuralNet nnTest = new NeuralNet();
         // TODO
-        double x= 0.0;
+
+        testBinaryNN.setInputToHiddenWeights(inputToHiddenWeights);
         assertEquals(20, testBinaryNN.sigmoid(x), "sigmoid calculation should be correct");
     }
 }
