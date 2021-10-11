@@ -93,7 +93,6 @@ public class NeuralNet {
                 outputs[i] += outputsHidden[j] * hiddenToOutputWeights[j][i];
             }
             outputs[i] = sigmoid(outputs[i]); //apply activation function
-
         }
         return outputs;
     }
@@ -120,7 +119,6 @@ public class NeuralNet {
         for (int i = 0; i < hiddenToOutputWeights.length; i++) {
             for (int j = 0; j < hiddenToOutputWeights[i].length; j++) {
 
-
                 hiddenToOutputWeights[i][j] += learningRate * outputErrorSignals[j] * outputsHidden[i];
 
             }
@@ -133,16 +131,10 @@ public class NeuralNet {
                 hiddenErrorSignals[i] += hiddenToOutputWeights[i][j] * outputErrorSignals[j];
             }
             if (isBinary) {
-
-
                 hiddenErrorSignals[i] *= outputsHidden[i] * (1 - outputsHidden[i]);
 
             } else {
-                if (i == 0) {
-                    hiddenErrorSignals[i] *= (1 - biasInput * biasInput) / 2.0;
-                } else {
-                    hiddenErrorSignals[i] *= (1 - outputsHidden[i-1] * outputsHidden[i-1]) / 2.0;
-                }
+                hiddenErrorSignals[i] *= (1 - outputsHidden[i] * outputsHidden[i]) / 2.0;
             }
         }
 
@@ -169,23 +161,17 @@ public class NeuralNet {
             while (currentTrainingSet < inputVectors.length) {
                 outputsHidden = forwardToHidden();
                 outputs = forwardToOutput(outputsHidden);
+                backPropagation(outputs, outputsHidden);
+
                 for (int i = 0; i < outputs.length; i++) {
                     error += Math.pow((outputs[i] - expectedOutput[currentTrainingSet][i]),2);
                 }
-
-                if (currentTrainingSet == (inputVectors.length - 1)) {
-                    error = error / 2;
-                    backPropagation(outputs, outputsHidden);
-                    epoch++;
-                    if (epoch == 1) {
-                        System.out.println(error);
-                    }
-                    if (epoch == 200) {
-                        System.out.println(error);
-                    }
-                }
                 currentTrainingSet++;
             }
+            error = error / 2;
+            epoch++;
+            System.out.println(error);
+
         } while (error > errorThreshold);
         System.out.println("number of epochs: " + epoch);
     }
@@ -204,86 +190,7 @@ public class NeuralNet {
 
         NeuralNet XOR1 = new NeuralNet(binaryInput, binaryExpectedOutput, learningRate, 0, noOfHiddenNeurons, true);
         NeuralNet Bipolar = new NeuralNet(bipolarInput, bipolarExpectedOutput, learningRate,0, noOfHiddenNeurons, false);
-        XOR1.testError();
-        //Bipolar.testError();
-
-
-//        double[] outputsHidden;
-//        double[] outputs;
-//        double error = 0;
-//        XOR1.initializeWeights();
-//
-//        outputsHidden = XOR1.forwardToHidden();
-//        outputs = XOR1.forwardToOutput(outputsHidden);
-//        for (int i = 0; i < outputs.length; i++) {
-//            error += Math.pow((outputs[i] - binaryExpectedOutput[currentTrainingSet][i]),2);
-//        }
-//        System.out.println(error);
-//        System.out.println(currentTrainingSet);
-//
-//        currentTrainingSet++;
-//        for (int i = 0; i < outputs.length; i++) {
-//            error += Math.pow((outputs[i] - binaryExpectedOutput[currentTrainingSet][i]),2);
-//        }
-//        System.out.println(error);
-//        System.out.println(currentTrainingSet);
-//
-//        currentTrainingSet++;
-//        for (int i = 0; i < outputs.length; i++) {
-//            error += Math.pow((outputs[i] - binaryExpectedOutput[currentTrainingSet][i]),2);
-//        }
-//        System.out.println(error);
-//        System.out.println(currentTrainingSet);
-//
-//        currentTrainingSet++;
-//        for (int i = 0; i < outputs.length; i++) {
-//            error += Math.pow((outputs[i] - binaryExpectedOutput[currentTrainingSet][i]),2);
-//        }
-//        System.out.println(error);
-//        System.out.println(currentTrainingSet);
-//
-//        error = error/2;
-//        System.out.println(error);
-//
-//        System.out.println(Arrays.deepToString(XOR1.inputToHiddenWeights));
-//        System.out.println(Arrays.deepToString(XOR1.hiddenToOutputWeights));
-//
-//        XOR1.backPropagation(outputs, outputsHidden);
-//        System.out.println(Arrays.deepToString(XOR1.inputToHiddenWeights));
-//        System.out.println(Arrays.deepToString(XOR1.hiddenToOutputWeights));
-//
-//        currentTrainingSet = 0;
-//        error = 0;
-//        outputsHidden = XOR1.forwardToHidden();
-//        outputs = XOR1.forwardToOutput(outputsHidden);
-//        for (int i = 0; i < outputs.length; i++) {
-//            error += Math.pow((outputs[i] - binaryExpectedOutput[currentTrainingSet][i]),2);
-//        }
-//        System.out.println(error);
-//        System.out.println(currentTrainingSet);
-//
-//        currentTrainingSet++;
-//        for (int i = 0; i < outputs.length; i++) {
-//            error += Math.pow((outputs[i] - binaryExpectedOutput[currentTrainingSet][i]),2);
-//        }
-//        System.out.println(error);
-//        System.out.println(currentTrainingSet);
-//
-//        currentTrainingSet++;
-//        for (int i = 0; i < outputs.length; i++) {
-//            error += Math.pow((outputs[i] - binaryExpectedOutput[currentTrainingSet][i]),2);
-//        }
-//        System.out.println(error);
-//        System.out.println(currentTrainingSet);
-//
-//        currentTrainingSet++;
-//        for (int i = 0; i < outputs.length; i++) {
-//            error += Math.pow((outputs[i] - binaryExpectedOutput[currentTrainingSet][i]),2);
-//        }
-//        System.out.println(error);
-//        System.out.println(currentTrainingSet);
-//
-//        error = error/2;
-//        System.out.println(error);
+        //XOR1.testError();
+        Bipolar.testError();
     }
 }
