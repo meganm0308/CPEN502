@@ -1,6 +1,8 @@
 package ece.cpen502;
 
-import java.util.Arrays;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class NeuralNet {
@@ -146,11 +148,12 @@ public class NeuralNet {
         }
     }
 
-    public void testError() {
+    public ArrayList testError() {
         double[] outputsHidden;
         double[] outputs;
         double error;
         int epoch = 0;
+        ArrayList<Double> errorList = new ArrayList<>();
 
         initializeWeights();
 
@@ -170,13 +173,29 @@ public class NeuralNet {
             }
             error = error / 2;
             epoch++;
-            System.out.println(error);
-
+            errorList.add(error);
         } while (error > errorThreshold);
         System.out.println("number of epochs: " + epoch);
+        return errorList;
     }
 
-    public static void main(String[] args) {
+    public static void textWriter(String fileName, ArrayList<Double> list) throws IOException {
+        FileWriter writer = null;
+        try {
+            writer = new FileWriter(fileName);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        for (Double aDouble : list) {
+            assert writer != null;
+            writer.write(aDouble + ",");
+        }
+        assert writer != null;
+        writer.close();
+    }
+
+    public static void main(String[] args) throws IOException {
 
         double learningRate = 0.2;
         int noOfHiddenNeurons = 4;
@@ -188,9 +207,18 @@ public class NeuralNet {
         double[][] bipolarInput = {{1,-1,-1}, {1,-1,1}, {1,1,-1}, {1,1,1}};
         double[][] bipolarExpectedOutput = {{-1}, {1}, {1}, {-1}};
 
-        NeuralNet XOR1 = new NeuralNet(binaryInput, binaryExpectedOutput, learningRate, 0, noOfHiddenNeurons, true);
-        NeuralNet Bipolar = new NeuralNet(bipolarInput, bipolarExpectedOutput, learningRate,0, noOfHiddenNeurons, false);
-        //XOR1.testError();
-        Bipolar.testError();
+        NeuralNet BinaryNoMomentum = new NeuralNet(binaryInput, binaryExpectedOutput, learningRate, 0, noOfHiddenNeurons, true);
+        NeuralNet BipolarNoMomentum = new NeuralNet(bipolarInput, bipolarExpectedOutput, learningRate,0, noOfHiddenNeurons, false);
+        NeuralNet BipolarWithMomentum = new NeuralNet(bipolarInput, bipolarExpectedOutput, learningRate,0.9, noOfHiddenNeurons, false);
+
+        ArrayList xorErrors = BinaryNoMomentum.testError();
+        textWriter("BinaryNoMomentum.txt", xorErrors);
+
+        ArrayList bipolarErrors = BipolarNoMomentum.testError();
+        textWriter("BipolarNoMomentum.txt", bipolarErrors);
+
+        ArrayList bipolarMomentumErrors = BipolarNoMomentum.testError();
+        textWriter("BipolarWithMomentum.txt", bipolarMomentumErrors);
+
     }
 }
