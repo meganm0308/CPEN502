@@ -29,9 +29,6 @@ public class NeuralNet {
     private double biasInput = 1;
     private double[][] inputVectors, expectedOutput;
 
-    //error
-    private double[] errorSets = new double[numOutputs];
-
     NeuralNet (double[][] input, double[][] output,
                double lrnRate, double inputMomentum,
                int noOfHiddenNeurons, boolean isBinaryTraining) {
