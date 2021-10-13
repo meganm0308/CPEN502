@@ -148,11 +148,9 @@ public class NeuralNet {
         //update weights from inputs to the hidden layers.
         for (int i = 0; i < inputToHiddenWeights.length; i++) {
             for (int j = 1; j <= inputToHiddenWeights[i].length; j++) {
-
                 deltaWInputToHidden[i][j-1] = momentum * deltaWInputToHidden[i][j-1]
                         + learningRate * hiddenErrorSignals[j] * inputVectors[currentTrainingSet][i];
-                double currentW = inputToHiddenWeights[i][j-1];
-                inputToHiddenWeights[i][j-1] = currentW + deltaWInputToHidden[i][j-1];
+                inputToHiddenWeights[i][j-1] += deltaWInputToHidden[i][j-1];
             }
         }
     }
