@@ -3,7 +3,6 @@ package ece.cpen502;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 public class NeuralNet {
@@ -16,7 +15,7 @@ public class NeuralNet {
     private static double errorThreshold = 0.05;
     private static int numInputs = 2;
     private static int numOutputs = 1;
-    private static int currentTrainingSet = 0;
+    private int currentTrainingSet = 0;
 
     //upper and lower bounds for initializing weights
     private double weightMin = -0.5;
@@ -63,7 +62,6 @@ public class NeuralNet {
                 hiddenToOutputWeights[i][j] = weightMin + (new Random().nextDouble() * (weightMax - weightMin));
             }
         }
-
     }
 
     //The activation function
@@ -147,8 +145,9 @@ public class NeuralNet {
             }
         }
 
+        //update weights from inputs to the hidden layers.
         for (int i = 0; i < inputToHiddenWeights.length; i++) {
-            for (int j = 1; j < inputToHiddenWeights[i].length; j++) {
+            for (int j = 1; j <= inputToHiddenWeights[i].length; j++) {
                 deltaWInputToHidden[i][j-1] = momentum * deltaWInputToHidden[i][j-1]
                         + learningRate * hiddenErrorSignals[j] * inputVectors[currentTrainingSet][i];
                 inputToHiddenWeights[i][j-1] += deltaWInputToHidden[i][j-1];
@@ -245,5 +244,4 @@ public class NeuralNet {
     public double[][] getHiddenToOutputWeights(){
         return this.hiddenToOutputWeights;
     }
-
 }
