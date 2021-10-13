@@ -15,7 +15,7 @@ public class NeuralNet {
     private static double errorThreshold = 0.05;
     private static int numInputs = 2;
     private static int numOutputs = 1;
-    private static int currentTrainingSet = 0;
+    private int currentTrainingSet = 0;
 
     //upper and lower bounds for initializing weights
     private double weightMin = -0.5;
@@ -39,11 +39,13 @@ public class NeuralNet {
         numHiddenNeurons = noOfHiddenNeurons;
         isBinary = isBinaryTraining;
 
-        inputToHiddenWeights = new double[numInputs + 1][numHiddenNeurons+1];
+//        inputToHiddenWeights = new double[numInputs + 1][numHiddenNeurons+1];
+        inputToHiddenWeights = new double[numInputs + 1][numHiddenNeurons];
         hiddenToOutputWeights = new double[numHiddenNeurons + 1][numOutputs];
 
         deltaWHiddenToOutput = new double[numHiddenNeurons + 1][numOutputs];
-        deltaWInputToHidden = new double[inputVectors.length][numHiddenNeurons + 1];
+//        deltaWInputToHidden = new double[inputVectors.length][numHiddenNeurons+1];
+        deltaWInputToHidden = new double[inputVectors.length][numHiddenNeurons];
     }
 
     //Initialize weights to random values in the range [weightMin, weightMax]
@@ -65,6 +67,7 @@ public class NeuralNet {
     //The activation function
     public double sigmoid(double x) {
         if (isBinary) {
+            double a = 1 / (1 + Math.pow(Math.E, -x));
             return 1 / (1 + Math.pow(Math.E, -x)); //sigmoid function for binary training sets
         } else {
             return -1 + 2 / (1 + Math.pow(Math.E, -x)); //sigmoid function for bipolar training sets
@@ -80,7 +83,9 @@ public class NeuralNet {
         for (int i = 1; i < outputsHidden.length; i++) {
             outputsHidden[i] = 0;
             for (int j = 0; j < inputToHiddenWeights.length; j++) {
-                outputsHidden[i] += inputVectors[currentTrainingSet][j] * inputToHiddenWeights[j][i];
+                double currentInput = inputVectors[currentTrainingSet][j];
+                double currentWeight = inputToHiddenWeights[j][i-1];
+                outputsHidden[i] +=  currentInput * currentWeight ;
             }
             outputsHidden[i] = sigmoid(outputsHidden[i]);  //apply activation function
         }
@@ -122,7 +127,7 @@ public class NeuralNet {
         for (int i = 0; i < hiddenToOutputWeights.length; i++) {
             for (int j = 0; j < hiddenToOutputWeights[i].length; j++) {
                 deltaWHiddenToOutput[i][j] = momentum * deltaWHiddenToOutput[i][j]
-                                            + learningRate * outputErrorSignals[j] * outputsHidden[i];
+                        + learningRate * outputErrorSignals[j] * outputsHidden[i];
                 hiddenToOutputWeights[i][j] += deltaWHiddenToOutput[i][j];
             }
         }
@@ -140,12 +145,14 @@ public class NeuralNet {
             }
         }
 
-        //update weights from the inputs to the hidden layers
+        //update weights from inputs to the hidden layers.
         for (int i = 0; i < inputToHiddenWeights.length; i++) {
-            for (int j = 0; j < inputToHiddenWeights[i].length; j++) {
-                deltaWInputToHidden[i][j] = momentum * deltaWInputToHidden[i][j]
-                                            + learningRate * hiddenErrorSignals[j] * inputVectors[currentTrainingSet][i];
-                inputToHiddenWeights[i][j] += deltaWInputToHidden[i][j];
+            for (int j = 1; j <= inputToHiddenWeights[i].length; j++) {
+
+                deltaWInputToHidden[i][j-1] = momentum * deltaWInputToHidden[i][j-1]
+                        + learningRate * hiddenErrorSignals[j] * inputVectors[currentTrainingSet][i];
+                double currentW = inputToHiddenWeights[i][j-1];
+                inputToHiddenWeights[i][j-1] = currentW + deltaWInputToHidden[i][j-1];
             }
         }
     }
@@ -221,5 +228,22 @@ public class NeuralNet {
 
         ArrayList bipolarMomentumErrors = BipolarWithMomentum.testError();
         textWriter("BipolarWithMomentum.txt", bipolarMomentumErrors);
+    }
+
+//    helper functions for testing
+    public void setInputToHiddenWeights(double[][] weights){
+        this.inputToHiddenWeights = weights;
+    }
+
+    public void setHiddenToOutputWeights(double[][] weights){
+        this.hiddenToOutputWeights = weights;
+    }
+
+    public double[][] getInputToHiddenWeights(){
+        return this.inputToHiddenWeights;
+    }
+
+    public double[][] getHiddenToOutputWeights(){
+        return this.hiddenToOutputWeights;
     }
 }
