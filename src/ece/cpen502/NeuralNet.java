@@ -1,11 +1,11 @@
 package ece.cpen502;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Random;
+import java.util.*;
 
-public class NeuralNet {
+public class NeuralNet implements NeuralNetInterface {
 
     private boolean isBinary; //true = binary training sets used, false = bipolar training sets
     private double learningRate, momentum;
@@ -26,18 +26,25 @@ public class NeuralNet {
     private double[][] deltaWHiddenToOutput, deltaWInputToHidden;
 
     //inputs
-    private double biasInput = 1;
     private double[][] inputVectors, expectedOutput;
+
+    //for save and load
+    private boolean areWeightsLoaded = false;
+    private String separator = "break"; //used to separate multiple groups of weights when outputting/reading to/from a file
+    private String savedOutputPath = "";
+    private int saveOncePerNoOfEpochs = 50;
 
     NeuralNet (double[][] input, double[][] output,
                double lrnRate, double inputMomentum,
-               int noOfHiddenNeurons, boolean isBinaryTraining) {
+               int noOfHiddenNeurons, boolean isBinaryTraining,
+               String progressOutputPath) {
         inputVectors = input;
         expectedOutput = output;
         learningRate = lrnRate;
         momentum = inputMomentum;
         numHiddenNeurons = noOfHiddenNeurons;
         isBinary = isBinaryTraining;
+        savedOutputPath = progressOutputPath;
 
         inputToHiddenWeights = new double[numInputs + 1][numHiddenNeurons+1];
         hiddenToOutputWeights = new double[numHiddenNeurons + 1][numOutputs];
@@ -47,6 +54,7 @@ public class NeuralNet {
     }
 
     //Initialize weights to random values in the range [weightMin, weightMax]
+    @Override
     public void initializeWeights() {
         //Initialize weights from the inputs to the neurons at the hidden layer
         for (int i = 0; i < inputToHiddenWeights.length; i++) {
@@ -63,6 +71,7 @@ public class NeuralNet {
     }
 
     //The activation function
+    @Override
     public double sigmoid(double x) {
         if (isBinary) {
             return 1 / (1 + Math.pow(Math.E, -x)); //sigmoid function for binary training sets
@@ -74,7 +83,7 @@ public class NeuralNet {
     //Forward propagation to calculate the outputs from the hidden neurons and the output neuron(s)
     public double[] forwardToHidden() {
         double[] outputsHidden = new double[numHiddenNeurons + 1];
-        outputsHidden[0] = biasInput;
+        outputsHidden[0] = bias;
 
         //outputs from the hidden neurons
         for (int i = 1; i < outputsHidden.length; i++) {
@@ -150,14 +159,14 @@ public class NeuralNet {
         }
     }
 
-    public ArrayList testError() {
+    public ArrayList train() {
         double[] outputsHidden;
         double[] outputs;
         double error;
         int epoch = 0;
         ArrayList<Double> errorList = new ArrayList<>();
 
-        initializeWeights();
+        if (!areWeightsLoaded) initializeWeights();
 
         do {
             currentTrainingSet = 0;
@@ -173,6 +182,9 @@ public class NeuralNet {
                 }
                 currentTrainingSet++;
             }
+
+            if (savedOutputPath.length() > 0 && epoch % saveOncePerNoOfEpochs == 0) save(savedOutputPath);
+
             error = error / 2;
             epoch++;
             errorList.add(error);
@@ -197,6 +209,73 @@ public class NeuralNet {
         writer.close();
     }
 
+    @Override
+    public void save(String filePath){
+        try {
+            FileWriter writer = new FileWriter(filePath);
+            String inputToHiddenWeightsString = "";
+            String hiddenToOutputWeightsString = "";
+
+            for (double[] eachSetOfWeights : inputToHiddenWeights) {
+                for (double eachWeight: eachSetOfWeights) {
+                    inputToHiddenWeightsString += eachWeight + ",";
+                }
+                inputToHiddenWeightsString += "\n";
+            }
+            for (double[] eachSetOfWeights : hiddenToOutputWeights) {
+                for (double eachWeight: eachSetOfWeights) {
+                    hiddenToOutputWeightsString += eachWeight + ",";
+                }
+                hiddenToOutputWeightsString += "\n";
+            }
+            writer.write(inputToHiddenWeightsString + separator + "\n" + hiddenToOutputWeightsString);
+            writer.close();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    };
+
+    @Override
+    public void load(String argFileName){
+        try {
+            File myFile = new File(argFileName);
+            Scanner reader = new Scanner(myFile);
+
+            int i = 0;
+            int subArraySize = numHiddenNeurons+1;
+            //read weights for inputToHiddenWeights
+            while (reader.hasNextLine()) {
+                String setOfWeights = reader.nextLine();
+                if (setOfWeights.contains(separator)) {
+                    subArraySize = numOutputs;
+                    i = 0;
+                    break;
+                }
+                String[] parts = setOfWeights.split(",");
+                for (int idx = 0; idx < subArraySize; ++idx) {
+                    this.inputToHiddenWeights[i][idx] = Double.parseDouble(parts[idx]);
+                }
+                i++;
+            }
+
+            //read weights for hiddenToOutputWeights
+            while (reader.hasNextLine()) {
+                String setOfWeights = reader.nextLine();
+                String[] parts = setOfWeights.split(",");
+                for (int idx = 0; idx < subArraySize; ++idx) {
+                    this.hiddenToOutputWeights[i][idx] = Double.parseDouble(parts[idx]);
+                }
+                i++;
+            }
+
+            areWeightsLoaded = true;
+            reader.close();
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
+    };
+
     public static void main(String[] args) throws IOException {
 
         double learningRate = 0.2;
@@ -209,17 +288,20 @@ public class NeuralNet {
         double[][] bipolarInput = {{1,-1,-1}, {1,-1,1}, {1,1,-1}, {1,1,1}};
         double[][] bipolarExpectedOutput = {{-1}, {1}, {1}, {-1}};
 
-        NeuralNet BinaryNoMomentum = new NeuralNet(binaryInput, binaryExpectedOutput, learningRate, 0, noOfHiddenNeurons, true);
-        NeuralNet BipolarNoMomentum = new NeuralNet(bipolarInput, bipolarExpectedOutput, learningRate,0, noOfHiddenNeurons, false);
-        NeuralNet BipolarWithMomentum = new NeuralNet(bipolarInput, bipolarExpectedOutput, learningRate,0.9, noOfHiddenNeurons, false);
+        NeuralNet BinaryNoMomentum = new NeuralNet(binaryInput, binaryExpectedOutput, learningRate, 0, noOfHiddenNeurons, true, "progress1.txt");
+        NeuralNet BipolarNoMomentum = new NeuralNet(bipolarInput, bipolarExpectedOutput, learningRate,0, noOfHiddenNeurons, false, "progress2.txt");
+        NeuralNet BipolarWithMomentum = new NeuralNet(bipolarInput, bipolarExpectedOutput, learningRate,0.9, noOfHiddenNeurons, false, "progress3.txt");
 
-        ArrayList xorErrors = BinaryNoMomentum.testError();
+//        BinaryNoMomentum.load("progress1.txt");
+        ArrayList xorErrors = BinaryNoMomentum.train();
         textWriter("BinaryNoMomentum.txt", xorErrors);
 
-        ArrayList bipolarErrors = BipolarNoMomentum.testError();
+//        BipolarNoMomentum.load("progress2.txt");
+        ArrayList bipolarErrors = BipolarNoMomentum.train();
         textWriter("BipolarNoMomentum.txt", bipolarErrors);
 
-        ArrayList bipolarMomentumErrors = BipolarWithMomentum.testError();
+//        BipolarWithMomentum.load("progress3.txt");
+        ArrayList bipolarMomentumErrors = BipolarWithMomentum.train();
         textWriter("BipolarWithMomentum.txt", bipolarMomentumErrors);
     }
 }
